@@ -1,1 +1,3 @@
-# cmsc471-project2
+# CMSC471 Project2
+
+project2.py, report.pdf
