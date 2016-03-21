@@ -1,37 +1,54 @@
 #!/usr/bin/python
+import time
 import math
 import random
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 
 def main():
 
     #Config variables
-    step =  .1
+    step =  .05
     xmin = -2.5
     xmax =  2.5
     ymin = -2.5
     ymax =  2.5
-    num_restarts = 10
+    num_restarts = 1000
     max_temp = 1000
 
-    r = lambda x,y: math.sqrt(x**2 + y**2)
+    r = lambda x,y: np.sqrt(x**2 + y**2)
     z = lambda x,y: (
-                     ( (math.sin(x**2+3*y**2))/(0.1+r(x,y)**2) ) +
+                     ( (np.sin(x**2+3*y**2))/(0.1+r(x,y)**2) ) +
                      (x**2 + 5*y**2) *
-                     ( (math.exp(1-r(x,y)**2))/(2) )
+                     ( (np.exp(1-r(x,y)**2))/(2) )
                     )
 
     #will save the path of each local search method
     path = {}
+    runtime = {}
 
-    #path["hc"]   = hill_climb(z,step,xmin,xmax,ymin,ymax)
+    #Hill Climbing
+    start_time = time.time()
+    path["hc"]   = hill_climb(z,step,xmin,xmax,ymin,ymax)
+    runtime["hc"] = time.time() - start_time
+    print ("Hill Cimbing:        min = " + str(path["hc"][-1]) + " runtime = " + str(runtime["hc"]) + " seconds")
 
+    #Hill Climbing w/ RR
+    start_time = time.time()
+    path["hcrr"] = hill_climb_random_restart(z,step,num_restarts,xmin,xmax,ymin,ymax)
+    runtime["hcrr"] = time.time() - start_time
+    print ("Hill Cimbing w/ RR:  min = " + str(path["hcrr"][-1])+ " runtime = " + str(runtime["hcrr"]) + " seconds")
 
-    #path["hcrr"] = hill_climb_random_restart(z,step,num_restarts,xmin,xmax,ymin,ymax)
-
+    #Simmulated Annealing
+    start_time = time.time()
     path["sa"]   = simulated_annealing(z,step,max_temp,xmin,xmax,ymin,ymax)
+    runtime["sa"] = time.time() - start_time
+    print ("Simulated Annealing: min = " + str(path["sa"])+ " runtime = " + str(runtime["sa"]) + " seconds")
 
-    print (path["sa"])
+
+
+    print ("Generating graph...")
 
     graph(z,step,xmin,xmax,ymin,ymax)
 
@@ -52,7 +69,7 @@ def hill_climb(f, step, xmin, xmax, ymin, ymax):
 
         current = f(x,y)
         path.append(current)
-        print ("z=" + str(current) + " x=" + str(x) + " y=" + str(y) + "\n")
+        #print ("z=" + str(current) + " x=" + str(x) + " y=" + str(y) + "\n")
 
         #check 4 directions (+x,y) (x,+y) (-x,y) (x,-y)
         if   f(x+step,y) < current: x = x + step
@@ -80,7 +97,7 @@ ymax):
             minima = new_minima
             path = new_path
 
-    print (path[-1])
+    #print (path[-1])
     return path
 
 
@@ -118,23 +135,15 @@ def simulated_annealing(f, step, max_temp, xmin, xmax, ymin, ymax):
 
 def graph(f, step, xmin, xmax, ymin, ymax):
 
-    i = 0.1
-    posy = 0
-    posx = 0
-    x = []
-    y = []
-    z = []
 
-    while (posx < xmax):
-        x.append(posx)
-        posx += i
+    X = np.arange(xmin, xmax, step)
+    Y = np.arange(ymin, ymax, step)
+    xc, yc = np.meshgrid(X, Y)
 
-        while (posy < ymax):
-            y.append(posx)
-            z.append(f(posx,posy))
-            posy += i
-
-    plt.plot(x, y, z)
+    Z = f(xc,yc)
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111,projection="3d")
+    ax.plot_surface(xc,yc,Z)
     plt.show()
 
 
